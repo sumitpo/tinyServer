@@ -18,5 +18,5 @@ to run the server, choose a port and run `./server [port]`.
 the client is not implemented, to test the server, run `nc [ip of the server]
 [port of the server]`
 
-The server is tested in Manjaro 20.2.1 Nibia, x86_64 Linux 5.10.19, other system
-has not been tested yet.
+The server is tested in Manjaro 20.2.1 Nibia, x86_64 Linux 5.10.19, other
+systems have not been tested yet.
