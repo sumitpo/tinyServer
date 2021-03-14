@@ -74,7 +74,7 @@ int main(int argc, char *argv[]) {
   // completed connection queue: client have send the ack and complete the
   // three-way handshake, the sockets in this queue is in ESTABLISHED.
   listen(listenFd, 10);
-  puts("Server is on line -_-");
+  puts(ANSI_COLOR_GRAY "Server is on line -_-" ANSI_COLOR_RESET);
 
   // The purpose of the zombie state is to maintain information about the child
   // for the parent to fetch at some later time. This information includes the
@@ -141,7 +141,6 @@ int main(int argc, char *argv[]) {
       if (close(listenFd) == -1) {
         coloredPerror("listen close error");
       }
-      printf("lis %d\n", listenFd);
 
       char addr[INET_ADDRSTRLEN];
       inet_ntop(AF_INET, &(clientAddr.sin_addr), addr, INET_ADDRSTRLEN);

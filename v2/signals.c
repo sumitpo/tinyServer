@@ -1,4 +1,5 @@
 #include "signals.h"
+#include "color.h"
 sigFunc *signal(int signo, sigFunc *func) {
   struct sigaction act, oact;
 
@@ -24,5 +25,7 @@ void sigChild(int signo) {
   int stat;
   pid = wait(&stat);
   wait(&stat);
-  write(1, "child process exited, signal catch\n", 35);
+  write(1, ANSI_COLOR_CYAN, 5);
+  write(1, "[log] >>> child process exited, signal catch\n", 45);
+  write(1, ANSI_COLOR_RESET, 4);
 }
