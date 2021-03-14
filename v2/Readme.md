@@ -1,6 +1,6 @@
 # version 2
 
-version 2 tcpserver use forking childe process to process the client input,
+version 2 tcpserver use forking child process to process the client input,
 and we handle the following three questions.
 
 - Catching the SIGCHLD signal when forking child processes.
