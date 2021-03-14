@@ -1,7 +1,7 @@
+#include "color.h"
 #include <stdio.h>
 #include <sys/sysinfo.h>
-#include "color.h"
-int main(int argc, char *argv[]){
+int main(int argc, char *argv[]) {
   int numCores = get_nprocs();
   printf("%d cores\n", numCores);
   printf(ANSI_COLOR_BLUE "hello world" ANSI_COLOR_RESET);

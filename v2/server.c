@@ -10,22 +10,22 @@
 #include <unistd.h>
 
 #include "color.h"
-#include "utils.h"
 #include "signals.h"
+#include "utils.h"
 
 #define xxx
 
 #define MAXLINE 1024
 static inline void usage() { puts("./server [port]\n"); }
-static void strEcho(int sockfd){
+static void strEcho(int sockfd) {
   char buf[MAXLINE];
-  for(;;){
+  for (;;) {
     ssize_t n;
-    while((n=read(sockfd, buf, MAXLINE))>0)
+    while ((n = read(sockfd, buf, MAXLINE)) > 0)
       write(sockfd, buf, n);
-    if(n<0&& errno==EINTR)
+    if (n < 0 && errno == EINTR)
       continue;
-    else if(n<0){
+    else if (n < 0) {
       coloredPerror("strEcho: read error");
     }
     break;
@@ -107,13 +107,13 @@ int main(int argc, char *argv[]) {
     // connected socket is closed.
 
     int connFd;
-    for(;;){
+    for (;;) {
       // when client disconnected from the server, the child process exit and
       // SIGCHLD is delivered, at the same time, parent is blocked in its call
       // to accept, Since the signal was caught by the parent while the parent
-      // was blocked in a slow system call (accept), the kernel causes the accept
-      // to return an error of EINTR (interrupted system call). The parent does
-      // not handle this error, so it aborts.
+      // was blocked in a slow system call (accept), the kernel causes the
+      // accept to return an error of EINTR (interrupted system call). The
+      // parent does not handle this error, so it aborts.
       //
       //  when writing network programs that catch signals, we must be cognizant
       //  of interrupted system calls, and we must handle them. in the signal
@@ -121,27 +121,27 @@ int main(int argc, char *argv[]) {
       //  encounter interrupted system call.
 
       connFd = accept(listenFd, (struct sockaddr *)&clientAddr, &slen);
-      if(connFd<0){
-#ifdef	EPROTO
-		if (errno == EPROTO || errno == ECONNABORTED)
+      if (connFd < 0) {
+#ifdef EPROTO
+        if (errno == EPROTO || errno == ECONNABORTED)
 #else
-		if (errno == ECONNABORTED)
+        if (errno == ECONNABORTED)
 #endif
           continue;
-        else{
+        else {
           coloredPerror("accept error");
           exit(1);
         }
-      }
-      else break;
+      } else
+        break;
     }
 
     pid_t pid;
     if ((pid = fork()) == 0) {
-      if( close(listenFd) == -1){
+      if (close(listenFd) == -1) {
         coloredPerror("listen close error");
       }
-      printf("lis %d\n",listenFd);
+      printf("lis %d\n", listenFd);
 
       char addr[INET_ADDRSTRLEN];
       inet_ntop(AF_INET, &(clientAddr.sin_addr), addr, INET_ADDRSTRLEN);
@@ -156,12 +156,13 @@ int main(int argc, char *argv[]) {
       write(connFd, sendBuff, strlen(sendBuff));
       */
       strEcho(connFd);
-      if(close(connFd)==-1){
+      if (close(connFd) == -1) {
         coloredPerror("connected close error");
       }
 
       snprintf(logBuf, sizeof(logBuf),
-               ANSI_COLOR_BLUE "client from %s:%d disconnected" ANSI_COLOR_RESET,
+               ANSI_COLOR_BLUE
+               "client from %s:%d disconnected" ANSI_COLOR_RESET,
                addr, clientAddr.sin_port);
       puts(logBuf);
 
