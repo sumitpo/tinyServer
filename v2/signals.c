@@ -20,26 +20,9 @@ sigFunc *signal(int signo, sigFunc *func) {
 }
 
 void sigChild(int signo) {
-  // pid_t pid;
+  pid_t pid;
   int stat;
-
-  // Establishing a signal handler and calling wait from that handler are
-  // insufficient for preventing zombies. The problem is that all five signals
-  // are generated before the signal handler is executed, and the signal handler
-  // is executed only one time because Unix signals are normally not queued.
-
-  /*
   pid = wait(&stat);
-  */
-
-  // so wait is replaced by waitpid, the following code handle SIGCHLD correctly
-  // This version works because waitpid is called within a loop, fetching the
-  // status of any of children that have terminated. the WNOHANG must be
-  // specified: This tells waitpid not to block if there are running children
-  // that have not yet terminated. but for wait, it can't be called within a
-  // loop, for wait will block if there is running child process
-
-  while (waitpid(-1, &stat, WNOHANG) > 0) {
-    write(1, "child process exited, signal catch\n", 35);
-  }
+  wait(&stat);
+  write(1, "child process exited, signal catch\n", 35);
 }

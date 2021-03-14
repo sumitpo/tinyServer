@@ -141,6 +141,7 @@ int main(int argc, char *argv[]) {
       if (close(listenFd) == -1) {
         coloredPerror("listen close error");
       }
+      printf("lis %d\n", listenFd);
 
       char addr[INET_ADDRSTRLEN];
       inet_ntop(AF_INET, &(clientAddr.sin_addr), addr, INET_ADDRSTRLEN);
