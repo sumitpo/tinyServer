@@ -76,6 +76,15 @@ int main(int argc, char *argv[]) {
   listen(listenFd, 10);
   puts("Server is on line -_-");
 
+  // The purpose of the zombie state is to maintain information about the child
+  // for the parent to fetch at some later time. This information includes the
+  // process ID of the child, its termination status, and information on the
+  // resource utilization of the child. Zombie processes take up space in the
+  // kernel and eventually can run out of processes. So after fork children,
+  // the parent process must wait for them to prevent them from becoming
+  // zombies. To do this, a signal handler is established to catch SIGCHLD,
+  // and within the handler, wait is called.
+
   signal(SIGCHLD, sigChild);
 
   char logBuf[1025];
@@ -99,6 +108,18 @@ int main(int argc, char *argv[]) {
 
     int connFd;
     for(;;){
+      // when client disconnected from the server, the child process exit and
+      // SIGCHLD is delivered, at the same time, parent is blocked in its call
+      // to accept, Since the signal was caught by the parent while the parent
+      // was blocked in a slow system call (accept), the kernel causes the accept
+      // to return an error of EINTR (interrupted system call). The parent does
+      // not handle this error, so it aborts.
+      //
+      //  when writing network programs that catch signals, we must be cognizant
+      //  of interrupted system calls, and we must handle them. in the signal
+      //  function in signals.c, EINTR is handled and accept is restarted afer
+      //  encounter interrupted system call.
+
       connFd = accept(listenFd, (struct sockaddr *)&clientAddr, &slen);
       if(connFd<0){
 #ifdef	EPROTO
@@ -106,7 +127,6 @@ int main(int argc, char *argv[]) {
 #else
 		if (errno == ECONNABORTED)
 #endif
-        //if (errno == ECONNABORTED|| errno==EINTR)
           continue;
         else{
           coloredPerror("accept error");
