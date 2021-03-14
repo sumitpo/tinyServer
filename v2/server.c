@@ -11,9 +11,28 @@
 
 #include "color.h"
 #include "utils.h"
+#include "signals.h"
+
+#define xxx
+
+#define MAXLINE 1024
 static inline void usage() { puts("./server [port]\n"); }
+static void strEcho(int sockfd){
+  char buf[MAXLINE];
+  for(;;){
+    ssize_t n;
+    while((n=read(sockfd, buf, MAXLINE))>0)
+      write(sockfd, buf, n);
+    if(n<0&& errno==EINTR)
+      continue;
+    else if(n<0){
+      coloredPerror("strEcho: read error");
+    }
+    break;
+  }
+}
 int main(int argc, char *argv[]) {
-  if (argc < 1)
+  if (argc < 2)
     usage();
 
   char sendBuff[1025];
@@ -57,6 +76,8 @@ int main(int argc, char *argv[]) {
   listen(listenFd, 10);
   puts("Server is on line -_-");
 
+  signal(SIGCHLD, sigChild);
+
   char logBuf[1025];
   for (;;) {
     struct sockaddr_in clientAddr;
@@ -76,18 +97,72 @@ int main(int argc, char *argv[]) {
     // completes). When the server is finished serving a given client, the
     // connected socket is closed.
 
-    int connFd = accept(listenFd, (struct sockaddr *)&clientAddr, &slen);
+    int connFd;
+    for(;;){
+      connFd = accept(listenFd, (struct sockaddr *)&clientAddr, &slen);
+      if(connFd<0){
+#ifdef	EPROTO
+		if (errno == EPROTO || errno == ECONNABORTED)
+#else
+		if (errno == ECONNABORTED)
+#endif
+        //if (errno == ECONNABORTED|| errno==EINTR)
+          continue;
+        else{
+          coloredPerror("accept error");
+          exit(1);
+        }
+      }
+      else break;
+    }
 
-    char addr[INET_ADDRSTRLEN];
-    inet_ntop(AF_INET, &(clientAddr.sin_addr), addr, INET_ADDRSTRLEN);
-    snprintf(logBuf, sizeof(logBuf),
-             ANSI_COLOR_GREEN "client from %s:%d connected" ANSI_COLOR_RESET,
-             addr, clientAddr.sin_port);
-    puts(logBuf);
+    pid_t pid;
+    if ((pid = fork()) == 0) {
+      if( close(listenFd) == -1){
+        coloredPerror("listen close error");
+      }
+      printf("lis %d\n",listenFd);
 
-    ticks = time(NULL);
-    snprintf(sendBuff, sizeof(sendBuff), "%.24s\r\n", ctime(&ticks));
-    write(connFd, sendBuff, strlen(sendBuff));
+      char addr[INET_ADDRSTRLEN];
+      inet_ntop(AF_INET, &(clientAddr.sin_addr), addr, INET_ADDRSTRLEN);
+      snprintf(logBuf, sizeof(logBuf),
+               ANSI_COLOR_GREEN "client from %s:%d connected" ANSI_COLOR_RESET,
+               addr, clientAddr.sin_port);
+      puts(logBuf);
+
+      /*
+      ticks = time(NULL);
+      snprintf(sendBuff, sizeof(sendBuff), "%.24s\r\n", ctime(&ticks));
+      write(connFd, sendBuff, strlen(sendBuff));
+      */
+      strEcho(connFd);
+      if(close(connFd)==-1){
+        coloredPerror("connected close error");
+      }
+
+      snprintf(logBuf, sizeof(logBuf),
+               ANSI_COLOR_BLUE "client from %s:%d disconnected" ANSI_COLOR_RESET,
+               addr, clientAddr.sin_port);
+      puts(logBuf);
+
+      // WARNING!! REMEMBER TO EXIT.
+      exit(0);
+    }
+    // Why doesn't the close of connfd by the parent terminate
+    // its connection with the client? To understand what's happening,
+    // we must understand that every file or socket has a reference
+    // count. The reference count is maintained in the file table entry
+    // This is a count of the number of descriptors that are currently
+    // open that refer to this file or socket. After accept returns,
+    // the file table entry associated with connfd has a reference
+    // count of 1. But, after fork returns, both descriptors are shared
+    // (i.e., duplicated) between the parent and child, so the file
+    // table entries associated with both sockets now have a reference
+    // count of 2. Therefore, when the parent closes connfd, it just
+    // decrements the reference count from 2 to 1 and that is all.
+    // The actual cleanup and de-allocation of the socket does not happen
+    // until the reference count reaches 0. This will occur at some
+    // time later when the child closes connfd.
     close(connFd);
   }
 
