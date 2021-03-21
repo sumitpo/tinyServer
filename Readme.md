@@ -8,9 +8,14 @@ tcpserver is based on simple socket api, and disconnect after send the
 client current time.
 
 ## the second version:
-the first version is based on simple socket api, and disconnect after send the
+the second version is based on simple socket api, and disconnect after send the
 client current time.
 
+
+## The third version:
+the third version is 
+
+## compilation and test
 to compile the server, simple run `make`.
 
 to run the server, choose a port and run `./server [port]`.
