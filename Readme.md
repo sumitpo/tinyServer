@@ -13,7 +13,19 @@ client current time.
 
 
 ## The third version:
-the third version is 
+the third version is based on multi thread, every connection is handled by a thread
+
+## The forth version:
+the forth version is based on single process and select, listen file descriptor and
+connected file descriptors are handled by the select.
+
+## The fifth version:
+the fifth version is based on single process and epoll.
+
+## The sixth version:
+the sixth version is based on thread pool and epoll, new connection and connected ones
+are handled by epoll, process of client message is delivered to work queue and threads
+get the jobs.
 
 ## compilation and test
 to compile the server, simple run `make`.
