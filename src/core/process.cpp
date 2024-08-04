@@ -9,16 +9,22 @@ int process(int fd) {
   for (;;) {
     int ret = read(fd, buf, 1024);
     if (-1 == ret) {
-      break;
-      switch (errno) {
-      case EAGAIN: {
+      perror("read from fd");
+      if (errno == EAGAIN) {
+        write(fd, "error", 5);
+        return 2;
+      }
+    } else if (0 == ret) {
+      if (errno == EAGAIN) {
+        printf("ret 0: errno is eagain\n");
+        break;
+      } else if (errno == EWOULDBLOCK) {
+        printf("ret 0: errno is ewouldblock\n");
         break;
       }
-      default:
-        perror("read from fd");
-      }
     }
-    buf[ret - 1] = '\0';
+    buf[ret] = '\0';
+
     if (0 == strncmp("exit", buf, 4)) {
       return 1;
     } else if (0 == strncmp("ping", buf, 4)) {

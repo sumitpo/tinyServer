@@ -4,10 +4,23 @@
 
 #include <arpa/inet.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <string.h>
 #include <sys/epoll.h>
 #include <sys/socket.h>
 #include <unistd.h>
+
+bool setSocketBlockingEnabled(int fd, bool blocking) {
+  if (fd < 0)
+    return false;
+
+  int flags = fcntl(fd, F_GETFL, 0);
+  if (flags == -1)
+    return false;
+  flags = blocking ? (flags & ~O_NONBLOCK) : (flags | O_NONBLOCK);
+  return (fcntl(fd, F_SETFL, flags) == 0);
+}
+
 tcpConn::tcpConn() {
   _server_addr = "127.0.0.1";
   _port = 8888;
@@ -73,6 +86,7 @@ int tcpConn::run() {
       int fd = events[i].data.fd;
       if (fd == _listenFd && (events[i].events & EPOLLIN)) {
         int connFd = accept(fd, nullptr, nullptr);
+        setSocketBlockingEnabled(connFd, false);
         ev.events = EPOLLIN | EPOLLET;
         ev.data.fd = connFd;
         int ret = epoll_ctl(_epFd, EPOLL_CTL_ADD, connFd, &ev);
