@@ -1,6 +1,6 @@
 #include "net.hpp"
+#include "log.hpp"
 #include "process.hpp"
-// #include "log.h"
 
 #include <arpa/inet.h>
 #include <errno.h>
@@ -33,7 +33,7 @@ tcpConn::tcpConn(const std::string serverAddr, int port) {
 }
 tcpConn::~tcpConn() {
   if (!_inited) {
-    printf("tcp not inited\n");
+    log_warn("tcp not inited");
   } else {
     close(_listenFd);
     close(_epFd);
@@ -42,7 +42,7 @@ tcpConn::~tcpConn() {
 int tcpConn::_initSvr() {
   // create socket and convert it to a listen fd
   if ((_listenFd = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
-    perror("socket failed");
+    log_warn("socket failed: %s", strerror(errno));
     return 1;
   }
   struct sockaddr_in address;
@@ -52,11 +52,11 @@ int tcpConn::_initSvr() {
   address.sin_port = htons(_port);
 
   if (bind(_listenFd, (struct sockaddr *)&address, sizeof(address)) < 0) {
-    perror("bind failed");
+    log_warn("bind failed: %s", strerror(errno));
     return 1;
   }
   if (listen(_listenFd, 3) < 0) {
-    perror("listen");
+    log_warn("listen failed: %s", strerror(errno));
     return 1;
   }
 
@@ -68,14 +68,14 @@ int tcpConn::_initSvr() {
   ev.events = EPOLLIN | EPOLLET;
   ev.data.fd = _listenFd;
   epoll_ctl(_epFd, EPOLL_CTL_ADD, _listenFd, &ev);
-  printf("inited success\n");
+  log_debug("inited success");
   _inited = true;
   return 0;
 }
 
 int tcpConn::run() {
   if (!_inited) {
-    printf("not inited, exit now\n");
+    log_warn("not inited, exit now");
     return 0;
   }
   struct epoll_event events[256], ev;
@@ -92,7 +92,7 @@ int tcpConn::run() {
         int ret = epoll_ctl(_epFd, EPOLL_CTL_ADD, connFd, &ev);
         if (0 != ret) {
           // on error for adding fd to epoll fds, just close the connection
-          printf("epoll_ctl failed: %s", strerror(errno));
+          log_warn("epoll_ctl failed: %s", strerror(errno));
           close(connFd);
         }
       } else if (events[i].events & EPOLLIN) {
