@@ -6,14 +6,14 @@
 #include <sys/types.h>
 #include <unistd.h> // For close()
 
-char *message[] = {
+const char *message[] = {
     "ping",
     "hello",
     "exit",
 };
 
 int main(int argc, char *argv[]) {
-  char *server_ip = "127.0.0.1";
+  const char *server_ip = "127.0.0.1";
   int port = 8888;
   if (argc >= 2) {
     printf("the ip addr is %s\n", argv[1]);
