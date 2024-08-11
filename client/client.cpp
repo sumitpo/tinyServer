@@ -1,10 +1,13 @@
+#include "log.hpp"
 #include <arpa/inet.h> // For sockaddr_in, inet_addr(), etc.
 #include <cstring>
 #include <iostream>
 #include <random>
 #include <sys/socket.h>
 #include <sys/types.h>
-#include <unistd.h> // For close()
+#include <thread>
+#include <unistd.h>
+#include <vector>
 
 const char *message[] = {
     "ping",
@@ -29,13 +32,15 @@ int conn(const char *server_ip, int port) {
     std::cerr << "Invalid address/ Address not supported\n";
     return -1;
   }
+  /*
   printf("the port is %d\n", server_addr.sin_port);
   printf("the addr is %d\n", server_addr.sin_addr);
+  */
 
   // Connect to server
   if (connect(sockfd, (struct sockaddr *)&server_addr, sizeof(server_addr)) <
       0) {
-    perror("connect failed\n");
+    log_error("connect failed: %s", strerror(errno));
     return -1;
   }
   return sockfd;
@@ -48,7 +53,7 @@ int sendMsg(int sockfd) {
   std::mt19937 gen(rd()); // Seed the generator
 
   // Define the range for the random numbers
-  std::uniform_int_distribution<> dis(1, 100); // [1, 100]
+  std::uniform_int_distribution<> dis(4, 20); // [1, 100]
   int round = dis(gen);
   for (int i = 0; i < round; i++) {
     int index = dis(gen);
@@ -65,7 +70,8 @@ int sendMsg(int sockfd) {
   return 0;
 }
 
-int client(const char * server_ip, int port) {
+int client(int id, const char *server_ip, int port) {
+  printf("begin the client %d\n", id);
   int sockfd = conn(server_ip, port);
   if (sockfd == -1) {
     return 0;
@@ -73,12 +79,27 @@ int client(const char * server_ip, int port) {
   sendMsg(sockfd);
   // Close the socket
   close(sockfd);
+  printf("end the client %d\n", id);
+  return 0;
+}
+
+int launchMultiClient(int nClient, const char *server_ip, int port) {
+  std::vector<std::thread> clients;
+  for (int i = 0; i < nClient; i++) {
+    clients.emplace_back(client, i, server_ip, port);
+  }
+  for (auto &th : clients) {
+    if (th.joinable()) {
+      th.join();
+    }
+  }
   return 0;
 }
 
 int main(int argc, char *argv[]) {
   const char *server_ip = "127.0.0.1";
   int port = 8888;
+  int nclient = 1;
   if (argc >= 2) {
     printf("the ip addr is %s\n", argv[1]);
     server_ip = argv[1];
@@ -87,7 +108,12 @@ int main(int argc, char *argv[]) {
     printf("the port is %s\n", argv[2]);
     port = atoi(argv[2]);
   }
-  client(server_ip, port);
+  if (argc >= 4) {
+    printf("the client number is %s\n", argv[3]);
+    nclient = atoi(argv[3]);
+  }
+  // client(server_ip, port);
+  launchMultiClient(nclient, server_ip, port);
 
   return 0;
 }
