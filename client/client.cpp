@@ -11,21 +11,9 @@ const char *message[] = {
     "hello",
     "exit",
 };
-
-int main(int argc, char *argv[]) {
-  const char *server_ip = "127.0.0.1";
-  int port = 8888;
-  if (argc >= 2) {
-    printf("the ip addr is %s\n", argv[1]);
-    server_ip = argv[1];
-  }
-  if (argc >= 3) {
-    printf("the port is %s\n", argv[2]);
-    port = atoi(argv[2]);
-  }
+int conn(const char *server_ip, int port) {
   int sockfd;
   struct sockaddr_in server_addr;
-  char buffer[1024] = {0};
 
   // Create socket
   if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
@@ -50,7 +38,11 @@ int main(int argc, char *argv[]) {
     perror("connect failed\n");
     return -1;
   }
+  return sockfd;
+}
 
+int sendMsg(int sockfd) {
+  char buffer[1024] = {0};
   // Create a random device and seed the generator
   std::random_device rd;  // Obtain a random number from hardware
   std::mt19937 gen(rd()); // Seed the generator
@@ -70,9 +62,32 @@ int main(int argc, char *argv[]) {
     std::cout << "Server response: " << std::string(buffer, valread) << "\n";
   }
   send(sockfd, "exit", 4, 0);
+  return 0;
+}
 
+int client(const char * server_ip, int port) {
+  int sockfd = conn(server_ip, port);
+  if (sockfd == -1) {
+    return 0;
+  }
+  sendMsg(sockfd);
   // Close the socket
   close(sockfd);
+  return 0;
+}
+
+int main(int argc, char *argv[]) {
+  const char *server_ip = "127.0.0.1";
+  int port = 8888;
+  if (argc >= 2) {
+    printf("the ip addr is %s\n", argv[1]);
+    server_ip = argv[1];
+  }
+  if (argc >= 3) {
+    printf("the port is %s\n", argv[2]);
+    port = atoi(argv[2]);
+  }
+  client(server_ip, port);
 
   return 0;
 }
