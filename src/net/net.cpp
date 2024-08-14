@@ -86,6 +86,10 @@ int tcpConn::run() {
       int fd = events[i].data.fd;
       if (fd == _listenFd && (events[i].events & EPOLLIN)) {
         int connFd = accept(fd, nullptr, nullptr);
+        if (-1 == connFd) {
+          log_error("accept: %d", strerror(errno));
+          continue;
+        }
         setSocketBlockingEnabled(connFd, false);
         ev.events = EPOLLIN | EPOLLET;
         ev.data.fd = connFd;
@@ -99,6 +103,7 @@ int tcpConn::run() {
         int ret = process(events[i].data.fd);
         if (1 == ret) {
           epoll_ctl(_epFd, EPOLL_CTL_DEL, events[i].data.fd, nullptr);
+          log_debug("closing connected fd %d", events[i].data.fd);
           close(events[i].data.fd);
         }
       }
