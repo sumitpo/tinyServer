@@ -65,7 +65,10 @@ int tcpConn::_initSvr() {
 
   struct epoll_event ev;
   memset(&ev, 0, sizeof(ev));
-  ev.events = EPOLLIN | EPOLLET;
+  // DO NOT enable edge triggered on listen fd
+  // or accepted connection may be losted
+  // ev.events = EPOLLIN | EPOLLET;
+  ev.events = EPOLLIN;
   ev.data.fd = _listenFd;
   epoll_ctl(_epFd, EPOLL_CTL_ADD, _listenFd, &ev);
   log_debug("inited success");
