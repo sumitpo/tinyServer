@@ -20,5 +20,7 @@ private:
   int _listenFd;
   bool _inited;
   int _epFd;
+  int _maxConn;
+  int _currentConn;
 };
 #endif

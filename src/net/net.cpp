@@ -40,6 +40,8 @@ tcpConn::~tcpConn() {
   }
 }
 int tcpConn::_initSvr() {
+  _maxConn = 512;
+  _currentConn = 0;
   // create socket and convert it to a listen fd
   if ((_listenFd = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
     log_warn("socket failed: %s", strerror(errno));
@@ -55,7 +57,7 @@ int tcpConn::_initSvr() {
     log_warn("bind failed: %s", strerror(errno));
     return 1;
   }
-  if (listen(_listenFd, 3) < 0) {
+  if (listen(_listenFd, 15) < 0) {
     log_warn("listen failed: %s", strerror(errno));
     return 1;
   }
@@ -65,7 +67,10 @@ int tcpConn::_initSvr() {
 
   struct epoll_event ev;
   memset(&ev, 0, sizeof(ev));
-  ev.events = EPOLLIN | EPOLLET;
+  // DO NOT enable edge triggered on listen fd
+  // or accepted connection may be losted
+  // ev.events = EPOLLIN | EPOLLET;
+  ev.events = EPOLLIN;
   ev.data.fd = _listenFd;
   epoll_ctl(_epFd, EPOLL_CTL_ADD, _listenFd, &ev);
   log_debug("inited success");
@@ -86,6 +91,15 @@ int tcpConn::run() {
       int fd = events[i].data.fd;
       if (fd == _listenFd && (events[i].events & EPOLLIN)) {
         int connFd = accept(fd, nullptr, nullptr);
+        if (-1 == connFd) {
+          log_error("accept: %d", strerror(errno));
+          continue;
+        }
+        if (_currentConn >= _maxConn) {
+          log_warn("closing connection, reach max");
+          close(connFd);
+          continue;
+        }
         setSocketBlockingEnabled(connFd, false);
         ev.events = EPOLLIN | EPOLLET;
         ev.data.fd = connFd;
@@ -95,11 +109,15 @@ int tcpConn::run() {
           log_warn("epoll_ctl failed: %s", strerror(errno));
           close(connFd);
         }
+        _currentConn += 1;
       } else if (events[i].events & EPOLLIN) {
         int ret = process(events[i].data.fd);
+        log_debug("process return %d", ret);
         if (1 == ret) {
           epoll_ctl(_epFd, EPOLL_CTL_DEL, events[i].data.fd, nullptr);
+          log_debug("closing connected fd %d", events[i].data.fd);
           close(events[i].data.fd);
+          _currentConn -= 1;
         }
       }
     }

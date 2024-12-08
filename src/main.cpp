@@ -12,6 +12,7 @@ long getCPUCount() {
     log_error("Error: Unable to get the number of CPU cores.");
     return 1;
   }
+  log_debug("%d cpus in this computer", num_cores);
   return num_cores;
 }
 
