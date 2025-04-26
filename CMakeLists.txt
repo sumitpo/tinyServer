@@ -10,7 +10,9 @@ file(GLOB_RECURSE CLIENT_SOURCES "client/*.cpp")
 message("the sources are ${SOURCES}")
 file(GLOB_RECURSE 3RD_SOURCES "3rd/*.c")
 # Add the executable target
-add_executable(server ${SOURCES} ${3RD_SOURCES})
+if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+  add_executable(server ${SOURCES} ${3RD_SOURCES})
+endif()
 add_executable(client ${CLIENT_SOURCES} ${3RD_SOURCES})
 
 add_definitions(-DLOG_USE_COLOR)
@@ -18,7 +20,11 @@ add_definitions(-DLOG_USE_COLOR)
 set(header_path
     ${PROJECT_SOURCE_DIR}/include/net/ ${PROJECT_SOURCE_DIR}/include/core/
     ${PROJECT_SOURCE_DIR}/include/ ${PROJECT_SOURCE_DIR}/3rd/log/include/)
-target_include_directories(server PRIVATE ${header_path})
+
+if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+  target_include_directories(server PRIVATE ${header_path})
+endif()
+
 target_include_directories(client PRIVATE ${header_path})
 
 # Optionally add libraries find_package(SomeLibrary REQUIRED)
@@ -28,5 +34,7 @@ set(INSTALL_DIR "${CMAKE_SOURCE_DIR}/release")
 set(CMAKE_INSTALL_LIBDIR ${INSTALL_DIR}/lib)
 set(CMAKE_INSTALL_INCLUDEDIR ${INSTALL_DIR}/include)
 set(CMAKE_INSTALL_BINDIR ${INSTALL_DIR}/demo)
-install(TARGETS server DESTINATION ${CMAKE_INSTALL_BINDIR})
+if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+  install(TARGETS server DESTINATION ${CMAKE_INSTALL_BINDIR})
+endif()
 install(TARGETS client DESTINATION ${CMAKE_INSTALL_BINDIR})
