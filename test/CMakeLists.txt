@@ -4,20 +4,22 @@ PROJECT(MyProject)
 # Set C++ standard
 SET(CMAKE_CXX_STANDARD 11)
 
-# Add Google Test as a subdirectory
-add_subdirectory(third_party/googletest)
+# Fetch Google Test
+include(FetchContent)
+FetchContent_Declare(
+  googletest
+  GIT_REPOSITORY https://github.com/google/googletest.git
+  GIT_TAG        main  # Or use a specific release tag
+  )
 
-# Define the main executable
-add_executable(my_project src/main.cpp src/my_class.cpp)
+# Make sure that the Google Test source code is downloaded
+FetchContent_MakeAvailable(googletest)
 
 # Define the test executable
-add_executable(test_my_class tests/test_my_class.cpp)
+add_executable(http_test ${CMAKE_SOURCE_DIR}/test/http_test.cpp)
 
 # Link Google Test and pthread (on Linux) to the test executable
-target_link_libraries(test_my_class gtest gtest_main pthread)
-
-# Optionally link Google Test to the main executable (if needed)
-target_link_libraries(my_project gtest gtest_main)
+target_link_libraries(http_test gtest gtest_main pthread)
 
 # Enable testing and add a test
 enable_testing()
