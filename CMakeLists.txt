@@ -5,6 +5,12 @@ project(server VERSION 1.0)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
+SET(CMAKE_BUILD_TYPE "Debug")
+SET(CMAKE_CXX_FLAGS_DEBUG "-g")
+
+add_compile_options(-fsanitize=address)
+add_link_options(-fsanitize=address)
+
 file(GLOB_RECURSE SOURCES "src/*.cpp")
 file(GLOB_RECURSE CLIENT_SOURCES "client/*.cpp")
 message("the sources are ${SOURCES}")
